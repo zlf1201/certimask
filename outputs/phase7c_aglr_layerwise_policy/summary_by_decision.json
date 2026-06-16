@@ -1,0 +1,43 @@
+{
+  "total_layers": 24,
+  "scanned_layers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    8,
+    12,
+    13,
+    16,
+    20,
+    22,
+    23
+  ],
+  "go_layers": [
+    3,
+    8,
+    12,
+    13,
+    20
+  ],
+  "conditional_layers": [
+    0,
+    1,
+    2,
+    4,
+    5
+  ],
+  "fallback_layers": [
+    16,
+    22,
+    23
+  ],
+  "mean_selected_work_fraction": 0.5410133136094675,
+  "mean_selected_kept_mass": 0.9063526391983032,
+  "mean_selected_l2": 0.10599215500629865,
+  "aglr_vs_mean_pooled_average_mass_gain": 0.08652229492480934,
+  "aglr_vs_mean_pooled_average_l2_reduction": 0.23289286300468331,
+  "recommended_next_step": "Test per-group quantization on conditional layers, or lower quality thresholds"
+}

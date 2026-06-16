@@ -1,0 +1,24 @@
+{
+  "oracle_at_85_quality": {
+    "mean_kept_mass": 0.10048089176416397,
+    "mean_cosine": 0.12196309119462967,
+    "mean_l2_rel": 0.903141975402832
+  },
+  "mean_pooled_at_85_quality": {
+    "mean_kept_mass": 0.06311274878680706,
+    "mean_cosine": 0.07882096618413925,
+    "mean_l2_rel": 0.9396815299987793
+  },
+  "local_window_at_85_quality": {
+    "mean_kept_mass": 0.12129681557416916,
+    "mean_cosine": 0.12980244308710098,
+    "mean_l2_rel": 0.881399393081665
+  },
+  "random_at_85_quality": {
+    "mean_kept_mass": 0.0771365724503994,
+    "mean_cosine": 0.1029663048684597,
+    "mean_l2_rel": 0.9299649894237518
+  },
+  "primary_failure_mode": "sparsity_or_block_size_too_aggressive",
+  "recommended_next_step": "reduce_target_sparsity_or_block_size"
+}

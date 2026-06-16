@@ -1,0 +1,18 @@
+{
+  "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
+  "layer_index": 0,
+  "context_length": 512,
+  "block_size": 32,
+  "target_sparsities": [
+    0.7,
+    0.8,
+    0.85,
+    0.9
+  ],
+  "certificate_types": [
+    "actual",
+    "analytic"
+  ],
+  "device": "cpu",
+  "dtype": "float32"
+}

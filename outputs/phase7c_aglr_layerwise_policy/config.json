@@ -1,0 +1,29 @@
+{
+  "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
+  "context_length": 1024,
+  "block_size": 16,
+  "target_sparsities": [
+    0.3,
+    0.4,
+    0.5,
+    0.6
+  ],
+  "layers": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    8,
+    12,
+    13,
+    16,
+    20,
+    22,
+    23
+  ],
+  "local_blocks": 2,
+  "device": "cpu",
+  "dtype": "float32"
+}

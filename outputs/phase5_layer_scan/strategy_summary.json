@@ -1,0 +1,46 @@
+{
+  "total_layers": 24,
+  "go_layers": [
+    12,
+    22,
+    23
+  ],
+  "conditional_layers": [
+    3,
+    6,
+    7,
+    9,
+    11,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21
+  ],
+  "fallback_layers": [
+    0,
+    1,
+    2,
+    4,
+    5,
+    8,
+    10
+  ],
+  "score_quantization_unstable_layers": [
+    0
+  ],
+  "go_count": 3,
+  "conditional_count": 14,
+  "fallback_count": 7,
+  "mean_refinement_all_layers": 0.31796159569597066,
+  "mean_refinement_go_layers": 0.1788804945054945,
+  "mean_refinement_non_fallback_layers": 0.23365384615384616,
+  "estimated_fp16_refinement_fraction": 0.4571714743589744,
+  "note_estimated_fp16_fraction": "This is not a latency estimate. It approximates the fraction of FP16 scoring work assuming each layer's work is proportional to its refinement rate.",
+  "best_certificate": "coordinate_analytic",
+  "threshold_source": "reference_oracle"
+}

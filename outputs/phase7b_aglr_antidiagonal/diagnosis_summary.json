@@ -1,0 +1,12 @@
+{
+  "has_viable_indexer": false,
+  "best_indexer_config": null,
+  "phase7a_best_mass": 0.817,
+  "phase7b_best_mass": 0.9438814520835876,
+  "phase7a_best_l2": 0.312,
+  "phase7b_best_l2": 0.07759980112314224,
+  "improvement_over_phase7a": {
+    "mass_gain": 0.1268814520835877,
+    "l2_reduction": 0.23440019887685776
+  }
+}

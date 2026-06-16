@@ -1,0 +1,9 @@
+{
+  "has_viable_sparse_mask": false,
+  "best_quality_pass_config": null,
+  "best_strong_quality_pass_config": null,
+  "mean_pooled_viable": false,
+  "local_window_viable": false,
+  "local_plus_score_viable": false,
+  "oracle_upper_bound_viable": false
+}

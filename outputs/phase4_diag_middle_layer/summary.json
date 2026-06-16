@@ -1,0 +1,130 @@
+{
+  "model_metadata": {
+    "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
+    "transformers_version": "4.49.0",
+    "layer_index": 13,
+    "num_query_heads": 14,
+    "num_key_value_heads": 2,
+    "head_dim": 64,
+    "sequence_length": 1024,
+    "block_size": 16,
+    "num_blocks": 64,
+    "device": "cpu",
+    "dtype": "float32",
+    "threshold_source": "reference_oracle"
+  },
+  "actual_sparsity": 0.8658653846153846,
+  "naive_mismatch_rate": 0.020913461538461537,
+  "naive_mismatch_count": 609,
+  "valid_tiles": 29120,
+  "refinement_decomposition": {
+    "naive_mismatch_rate": 0.020913461538461537,
+    "oracle_crossing_rate": 0.005597527472527473,
+    "actual_refinement_rate": 0.19505494505494506,
+    "analytic_refinement_rate": 0.3335851648351648
+  },
+  "certimask_match_rate_actual": 1.0,
+  "certimask_match_rate_analytic": 1.0,
+  "score_distribution": {
+    "std": 2.7513840198516846,
+    "mean": -3.7211225032806396,
+    "p01": -10.270987510681152,
+    "p10": -7.267925262451172,
+    "p50": -3.716346263885498,
+    "p90": -0.24333606660366058,
+    "p99": 2.7479593753814697,
+    "abs_p50": 3.735743284225464,
+    "abs_p90": 7.268184185028076,
+    "abs_p99": 10.270987510681152
+  },
+  "threshold_distribution": {
+    "mean": -1.3640177249908447,
+    "std": 1.4578105211257935,
+    "p10": -3.218294143676758,
+    "p50": -1.4243173599243164,
+    "p90": 0.4026152491569519
+  },
+  "error_quantiles": {
+    "p50": 0.053820013999938965,
+    "p90": 0.1354580819606781,
+    "p99": 0.21688316762447357
+  },
+  "actual_bound_quantiles": {
+    "p50": 0.8650106191635132,
+    "p90": 1.0846850872039795,
+    "p99": 1.2356243133544922
+  },
+  "analytic_bound_quantiles": {
+    "p50": 1.5205172300338745,
+    "p90": 1.9158318042755127,
+    "p99": 2.1580169200897217
+  },
+  "margin_quantiles": {
+    "p10": 0.39154767990112305,
+    "p50": 2.427175283432007,
+    "p90": 5.487228870391846
+  },
+  "bound_inflation_actual": {
+    "p50": 15.90652084350586,
+    "p90": 84.64957427978516,
+    "p99": 845.1494750976562
+  },
+  "bound_inflation_analytic": {
+    "p50": 28.05630111694336,
+    "p90": 149.53958129882812,
+    "p99": 1477.697265625
+  },
+  "error_to_margin": {
+    "p50": 0.023260250687599182,
+    "p90": 0.16747865080833435,
+    "p99": 633495.1875
+  },
+  "margin_to_actual_bound": {
+    "p50": 2.7667853832244873,
+    "p90": 6.498634338378906,
+    "p99": 10.053899765014648
+  },
+  "margin_to_analytic_bound": {
+    "p50": 1.5705087184906006,
+    "p90": 3.6968367099761963,
+    "p99": 5.721105098724365
+  },
+  "row_subsets": [
+    {
+      "label": ">=1 valid keys",
+      "num_rows": 896,
+      "naive_mismatch_rate": 0.020913461538461537,
+      "oracle_crossing_rate": 0.005597527472527473,
+      "actual_refinement_rate": 0.19505494505494506,
+      "analytic_refinement_rate": 0.3335851648351648,
+      "actual_sparsity": 0.8658653846153846
+    },
+    {
+      "label": ">=4 valid keys",
+      "num_rows": 854,
+      "naive_mismatch_rate": 0.020112963218074115,
+      "oracle_crossing_rate": 0.005613720898195344,
+      "actual_refinement_rate": 0.19369059099049457,
+      "analytic_refinement_rate": 0.3324838131974101,
+      "actual_sparsity": 0.8654773384763741
+    },
+    {
+      "label": ">=8 valid keys",
+      "num_rows": 798,
+      "naive_mismatch_rate": 0.019319131161236423,
+      "oracle_crossing_rate": 0.005639097744360902,
+      "actual_refinement_rate": 0.1918685602896129,
+      "analytic_refinement_rate": 0.33086187691450847,
+      "actual_sparsity": 0.8645224171539961
+    },
+    {
+      "label": ">=16 valid keys",
+      "num_rows": 686,
+      "naive_mismatch_rate": 0.018367346938775512,
+      "oracle_crossing_rate": 0.00564868804664723,
+      "actual_refinement_rate": 0.18997813411078718,
+      "analytic_refinement_rate": 0.33035714285714285,
+      "actual_sparsity": 0.863265306122449
+    }
+  ]
+}

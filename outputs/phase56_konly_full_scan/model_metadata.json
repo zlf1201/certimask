@@ -1,0 +1,8 @@
+{
+  "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
+  "transformers_version": "4.49.0",
+  "num_layers": 24,
+  "context_length": 1024,
+  "block_size": 16,
+  "threshold_source": "reference_oracle"
+}

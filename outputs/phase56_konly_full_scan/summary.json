@@ -1,0 +1,82 @@
+{
+  "all_violations_zero": true,
+  "all_exact_match": true,
+  "strategy_summary": {
+    "total_layers": 24,
+    "certimask_layers": 22,
+    "fallback_layers": 1,
+    "conditional_layers": 1,
+    "go_layers": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "go_layer_indices": [
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+    ],
+    "conditional_layer_indices": [
+      1
+    ],
+    "fallback_layer_indices": [
+      0
+    ],
+    "score_unstable_layers": [],
+    "full_model_fp16_proxy": 0.1276127518315018,
+    "stage5_full_model_proxy": 0.4572,
+    "relative_reduction_vs_stage5": 0.7208819951191998,
+    "selected_strategy_counts": {
+      "k_only_per_group_g4_coordinate_analytic": 3,
+      "k_only_per_group_g16_coordinate_analytic": 21
+    },
+    "selected_group_size_counts": {
+      "0": 2,
+      "16": 21,
+      "4": 1
+    },
+    "best_refinement_strategy_counts": {
+      "k_only_per_group_g4_coordinate_analytic": 24
+    },
+    "threshold_source": "reference_oracle",
+    "note": "full_model_fp16_proxy is NOT a latency estimate. It approximates the fraction of FP16 scoring work."
+  }
+}

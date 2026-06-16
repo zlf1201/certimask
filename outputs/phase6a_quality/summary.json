@@ -1,0 +1,15 @@
+{
+  "mean_kept_attention_mass": 0.13219887231077468,
+  "mean_dropped_attention_mass": 0.867801138332912,
+  "mean_output_relative_l2": 0.8634768085820335,
+  "mean_output_cosine": 0.16917636032615388,
+  "mean_tile_sparsity": -0.8330078125,
+  "mean_score_work_fraction_proxy": 0.2455749607535322,
+  "mean_attention_tile_work_fraction": 0.13092912946428573,
+  "fallback_layers": 1,
+  "certimask_layers": 6,
+  "quality_acceptable": false,
+  "benefit_acceptable": true,
+  "recommend_triton": false,
+  "note": "These are quality and work proxies, not end-to-end latency measurements."
+}
