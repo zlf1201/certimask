@@ -1,0 +1,3 @@
+path,median_ms,p10_ms,p90_ms,mean_ms,std_ms
+with_allocation,5.8851,5.8412,5.9060,5.8769,0.0263
+reuse_inputs,0.8908,0.8848,0.8947,0.8898,0.0033

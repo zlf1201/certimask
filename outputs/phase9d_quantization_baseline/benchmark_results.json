@@ -1,0 +1,91 @@
+{
+  "config": {
+    "batch_size": 1,
+    "num_heads": 14,
+    "seq_len": 1024,
+    "head_dim": 64,
+    "block_size": 8,
+    "group_size": 4,
+    "dtype": "float16",
+    "device": "cuda",
+    "warmup": 20,
+    "iters": 100,
+    "output_dir": "outputs/phase9d_quantization_baseline"
+  },
+  "shape": {
+    "B": 1,
+    "H": 14,
+    "L": 1024,
+    "D": 64
+  },
+  "quantization_benchmark": {
+    "mode_a_current_full_ms": {
+      "median": 6702.373779296875,
+      "p10": 6670.13671875,
+      "p90": 6760.77587890625,
+      "mean": 6713.387739257812,
+      "std": 61.86032493061033
+    },
+    "mode_b_cached_quant_full_ms": {
+      "median": 6698.185791015625,
+      "p10": 6656.38134765625,
+      "p90": 6766.68408203125,
+      "mean": 6705.3891015625,
+      "std": 42.76072244872569
+    },
+    "mode_c_preallocated_full_ms": {
+      "median": 5.862720012664795,
+      "p10": 5.827904224395752,
+      "p90": 5.907104015350342,
+      "mean": 5.86622112751007,
+      "std": 0.03303184030789836
+    },
+    "quantization_ms": {
+      "median": 4.92086386680603,
+      "p10": 4.893631935119629,
+      "p90": 4.952320098876953,
+      "mean": 4.923140487670898,
+      "std": 0.023809740301753344
+    }
+  },
+  "dense_attention_baseline": {
+    "dense_sdpa_ms": {
+      "median": 0.19897599518299103,
+      "p10": 0.19686399400234222,
+      "p90": 0.20051200687885284,
+      "mean": 0.19879135996103287,
+      "std": 0.0015290807756386143
+    },
+    "dense_manual_ms": {
+      "median": 0.2953920066356659,
+      "p10": 0.2934719920158386,
+      "p90": 0.29843199253082275,
+      "mean": 0.2957424008846283,
+      "std": 0.002020679009233107
+    },
+    "sdpa_output_shape": [
+      1,
+      14,
+      1024,
+      64
+    ],
+    "flash_attention_available": true
+  },
+  "pipeline_proxy": {
+    "mean_attention_tile_work_fraction": 0.3765,
+    "ideal_sparse_attention_ms": 0.07491446218639612,
+    "current_total_proxy": 6702.448693759062,
+    "cached_total_proxy": 5.937634474851191,
+    "current_speedup_proxy_vs_dense": 2.968705980073613e-05,
+    "cached_speedup_proxy_vs_dense": 0.03351098758701844
+  },
+  "correctness": {
+    "exact_match_ab": true
+  },
+  "readiness": {
+    "quantization_is_blocker": false,
+    "readiness": "not_viable_at_L1024",
+    "ready_for_sparse_attention_kernel": false,
+    "recommended_next_step": "AGLR-C + CertiMask not viable at L=1024. Cached pipeline at 5.86ms vs dense SDPA at 0.20ms (29x overhead). The AGLR-C indexer itself is the bottleneck, not quantization. Try longer contexts (4K/8K) or reduce indexer overhead."
+  }
+}

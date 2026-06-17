@@ -1,0 +1,5 @@
+mode,median_ms,p10_ms,p90_ms,mean_ms,std_ms
+mode_a_current_full,6702.3738,6670.1367,6760.7759,6713.3877,61.8603
+mode_b_cached_quant_full,6698.1858,6656.3813,6766.6841,6705.3891,42.7607
+mode_c_preallocated_full,5.8627,5.8279,5.9071,5.8662,0.0330
+quantization_only,4.9209,4.8936,4.9523,4.9231,0.0238

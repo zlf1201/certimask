@@ -1,0 +1,154 @@
+{
+  "config": {
+    "batch_size": 1,
+    "num_heads": 14,
+    "seq_len": 1024,
+    "head_dim": 64,
+    "block_size": 8,
+    "group_size": 4,
+    "dtype": "float16",
+    "device": "cuda",
+    "warmup": 5,
+    "iters": 10,
+    "output_dir": "outputs/phase9c_full_profile"
+  },
+  "shape": {
+    "B": 1,
+    "H": 14,
+    "L": 1024,
+    "D": 64
+  },
+  "latency_breakdown": {
+    "key_quantization": {
+      "median": 4.805631875991821,
+      "p10": 4.781023979187012,
+      "p90": 4.918784141540527,
+      "mean": 4.8187103271484375,
+      "std": 0.04078967062523522
+    },
+    "triton_score_interval_kernel": {
+      "median": 0.889488011598587,
+      "p10": 0.8854079842567444,
+      "p90": 0.9259200096130371,
+      "mean": 0.8930879950523376,
+      "std": 0.012148105228915473
+    },
+    "reference_fp32_aglr_score": {
+      "median": 0.3590079993009567,
+      "p10": 0.30723199248313904,
+      "p90": 1.1652799844741821,
+      "mean": 0.45215039849281313,
+      "std": 0.2643540967576275
+    },
+    "topk_reference_mask_loop": {
+      "median": 321.45751953125,
+      "p10": 318.7519226074219,
+      "p90": 342.66119384765625,
+      "mean": 325.2245269775391,
+      "std": 8.620176922817574
+    },
+    "topk_reference_mask_vectorized": {
+      "median": 0.15635200589895248,
+      "p10": 0.15263999998569489,
+      "p90": 0.1773120015859604,
+      "mean": 0.15925440192222595,
+      "std": 0.008071433032285325
+    },
+    "partition_certificate_pytorch": {
+      "median": 6705.2216796875,
+      "p10": 6678.9150390625,
+      "p90": 6749.02587890625,
+      "mean": 6706.90439453125,
+      "std": 23.546622640574704
+    },
+    "partition_certificate_fused_triton": {
+      "median": 0.09204800054430962,
+      "p10": 0.09011200070381165,
+      "p90": 0.10911999642848969,
+      "mean": 0.09424320012331008,
+      "std": 0.005830997383365667
+    },
+    "fallback_resolution": {
+      "median": 0.14001599699258804,
+      "p10": 0.137472003698349,
+      "p90": 0.1472640037536621,
+      "mean": 0.14100159853696823,
+      "std": 0.0033547315504437293
+    },
+    "total_triton_certimask": {
+      "median": 6712.25048828125,
+      "p10": 6697.78955078125,
+      "p90": 6815.1083984375,
+      "mean": 6732.292138671875,
+      "std": 40.630016005533996
+    }
+  },
+  "topk_mask_comparison": {
+    "loop_ms": 321.45751953125,
+    "vectorized_ms": 0.15635200589895248,
+    "speedup": 2055.9858997843767,
+    "mask_exact_match": true
+  },
+  "certificate_fusion": {
+    "pytorch_certificate_ms": 6705.2216796875,
+    "fused_triton_certificate_ms": 0.09204800054430962,
+    "certificate_speedup": 72844.83791106113,
+    "decisions_match": true,
+    "ambiguous_match": true
+  },
+  "scoring_only_vs_full": {
+    "triton_scoring_only": {
+      "median": 0.8906719982624054,
+      "p10": 0.8862720131874084,
+      "p90": 0.9146239757537842,
+      "mean": 0.8926816046237945,
+      "std": 0.008280071196014566
+    },
+    "triton_full_wrapper": {
+      "median": 6712.25048828125,
+      "p10": 6697.78955078125,
+      "p90": 6815.1083984375,
+      "mean": 6732.292138671875,
+      "std": 40.630016005533996
+    },
+    "wrapper_overhead_ms": 6711.359816282988,
+    "wrapper_overhead_fraction": 0.9998673065017736
+  },
+  "allocation_overhead": {
+    "with_allocation": {
+      "median": 5.737871885299683,
+      "p10": 5.703264236450195,
+      "p90": 5.841216087341309,
+      "mean": 5.750300788879395,
+      "std": 0.0421521730838543
+    },
+    "reuse_inputs": {
+      "median": 0.8926399946212769,
+      "p10": 0.8845440149307251,
+      "p90": 0.9299839735031128,
+      "mean": 0.8964959979057312,
+      "std": 0.01272777920502876
+    },
+    "allocation_overhead_ms": 4.845231890678406
+  },
+  "latency_summary": {
+    "total_triton_certimask_ms": 6712.25048828125,
+    "optimized_total_with_fused_cert_ms": 6.442543890327215,
+    "triton_scoring_only_ms": 0.8906719982624054,
+    "wrapper_overhead_ms": 6711.359816282988,
+    "wrapper_overhead_fraction": 0.9998673065017736,
+    "key_quantization_ms": 4.805631875991821,
+    "triton_score_interval_kernel_ms": 0.889488011598587,
+    "reference_fp32_aglr_score_ms": 0.3590079993009567,
+    "topk_reference_mask_loop_ms": 321.45751953125,
+    "topk_reference_mask_vectorized_ms": 0.15635200589895248,
+    "topk_mask_speedup": 2055.9858997843767,
+    "topk_mask_exact_match": true,
+    "partition_certificate_pytorch_ms": 6705.2216796875,
+    "partition_certificate_fused_triton_ms": 0.09204800054430962,
+    "certificate_speedup": 72844.83791106113,
+    "fallback_resolution_ms": 0.14001599699258804,
+    "largest_bottleneck": "partition_certificate",
+    "recommended_next_step": "Use fused Triton certificate (72845x speedup) + vectorized topk (2056x speedup). Next bottleneck: key_quantization at 4.806 ms"
+  }
+}

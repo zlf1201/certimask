@@ -1,0 +1,17 @@
+{
+  "total_triton_certimask_ms": 7095.608154296875,
+  "optimized_total_with_fused_cert_ms": 329.14772275835276,
+  "triton_scoring_only_ms": 0.8889279961585999,
+  "wrapper_overhead_ms": 7094.719226300716,
+  "wrapper_overhead_fraction": 0.9998747213802075,
+  "key_quantization_ms": 4.920752048492432,
+  "triton_score_interval_kernel_ms": 0.8861919939517975,
+  "reference_fp32_aglr_score_ms": 0.3161119967699051,
+  "topk_reference_mask_ms": 322.79161071777344,
+  "partition_certificate_pytorch_ms": 6776.283935546875,
+  "partition_certificate_fused_triton_ms": 0.09216000139713287,
+  "certificate_speedup": 73527.3853387516,
+  "fallback_resolution_ms": 0.1408959999680519,
+  "largest_bottleneck": "partition_certificate",
+  "recommended_next_step": "Use fused Triton certificate (73527x speedup). Next bottleneck: topk_reference_mask at 322.792 ms"
+}

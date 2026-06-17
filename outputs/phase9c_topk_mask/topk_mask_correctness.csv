@@ -1,0 +1,2 @@
+mode,mask_exact_match,mismatch_count
+vectorized_vs_loop,True,0

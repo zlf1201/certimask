@@ -1,0 +1,18 @@
+{
+  "batch_size": 1,
+  "num_heads": 14,
+  "head_dim": 64,
+  "block_size": 8,
+  "group_size": 4,
+  "dtype": "float16",
+  "device": "cuda",
+  "warmup": 5,
+  "iters": 10,
+  "seq_lens": [
+    1024,
+    2048,
+    4096,
+    8192
+  ],
+  "output_dir": "outputs/phase9e_long_context_crossover"
+}

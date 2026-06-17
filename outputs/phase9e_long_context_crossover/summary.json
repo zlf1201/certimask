@@ -1,0 +1,64 @@
+{
+  "tested_lengths": [
+    1024,
+    2048,
+    4096,
+    8192
+  ],
+  "dense_sdpa_fp16_ms_by_length": {
+    "1024": 0.04513599909842014,
+    "2048": 0.11356800049543381,
+    "4096": 0.2611999958753586,
+    "8192": 0.7639679908752441
+  },
+  "dense_sdpa_fp32_ms_by_length": {
+    "1024": 0.18060799688100815,
+    "2048": 0.38443200290203094,
+    "4096": 1.250976026058197,
+    "8192": 4.245903968811035
+  },
+  "online_indexer_ms_by_length": {
+    "1024": 7.14681601524353,
+    "2048": 9.955024242401123,
+    "4096": 25.353808403015137,
+    "8192": 97.56241607666016
+  },
+  "cached_quant_indexer_ms_by_length": {
+    "1024": 1.833072006702423,
+    "2048": 4.6691200733184814,
+    "4096": 19.97659206390381,
+    "8192": 92.5821304321289
+  },
+  "optimistic_indexer_ms_by_length": {
+    "1024": 1.0745280385017395,
+    "2048": 3.6105120182037354,
+    "4096": 13.96940803527832,
+    "8192": 55.875328063964844
+  },
+  "online_speedup_proxy_by_length": {
+    "1024": 0.006300558064700387,
+    "2048": 0.011359318871057905,
+    "4096": 0.01026239409275342,
+    "8192": 0.007807538071552354
+  },
+  "cached_quant_speedup_proxy_by_length": {
+    "1024": 0.024396970791683164,
+    "2048": 0.024102489546567994,
+    "4096": 0.013011250630579695,
+    "8192": 0.008226229451208388
+  },
+  "optimistic_speedup_proxy_by_length": {
+    "1024": 0.041351442994627056,
+    "2048": 0.03108666728197884,
+    "4096": 0.018567290360052422,
+    "8192": 0.01360270120199164
+  },
+  "first_online_crossover_length": null,
+  "first_cached_quant_crossover_length": null,
+  "first_optimistic_crossover_length": null,
+  "dense_sdpa_fp16_scaling_exponent": 1.3445083719431188,
+  "dense_sdpa_fp32_scaling_exponent": 1.5367667984938493,
+  "indexer_scaling_exponent": 1.2661564533987755,
+  "ready_for_sparse_attention_kernel": false,
+  "recommended_next_step": "No crossover found at tested lengths. Consider even longer contexts or fundamental redesign."
+}

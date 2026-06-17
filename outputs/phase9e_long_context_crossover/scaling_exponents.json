@@ -1,0 +1,6 @@
+{
+  "dense_sdpa_fp16_alpha": 1.3445083719431188,
+  "dense_sdpa_fp32_alpha": 1.5367667984938493,
+  "online_indexer_alpha": 1.2661564533987755,
+  "triton_scoring_alpha": 1.9053304626257892
+}

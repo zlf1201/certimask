@@ -1,0 +1,38 @@
+{
+  "config": {
+    "batch_size": 1,
+    "num_heads": 14,
+    "seq_len": 1024,
+    "block_size": 8,
+    "dtype": "float16",
+    "device": "cuda",
+    "warmup": 20,
+    "iters": 100,
+    "output_dir": "outputs/phase9c_topk_mask"
+  },
+  "shape": {
+    "B": 1,
+    "H": 14,
+    "Q_blk": 128,
+    "K_blk": 128
+  },
+  "target_sparsity": 0.5,
+  "loop": {
+    "median": 187.7683868408203,
+    "p10": 187.3519744873047,
+    "p90": 195.32620239257812,
+    "mean": 189.3311151123047,
+    "std": 4.531515841088003
+  },
+  "vectorized": {
+    "median": 0.14974399656057358,
+    "p10": 0.14796799421310425,
+    "p90": 0.15622399747371674,
+    "mean": 0.15111200019717216,
+    "std": 0.0036349776300033483
+  },
+  "speedup_vectorized_vs_loop": 1253.929313719534,
+  "mask_exact_match": true,
+  "mismatch_count": 0,
+  "selected_mode": "vectorized"
+}

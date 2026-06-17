@@ -1,0 +1,5 @@
+seq_len,num_blocks,valid_tiles,dense_sdpa_fp16_ms,dense_sdpa_fp32_ms,online_full_with_quant_ms,online_full_cached_quant_ms,optimistic_cached_indexer_ms,ideal_sparse_attention_ms,online_total_proxy_ms,cached_quant_total_proxy_ms,optimistic_total_proxy_ms,online_speedup_proxy,cached_quant_speedup_proxy,optimistic_speedup_proxy,oom
+1024,128,115584,0.0451,0.1806,7.1468,1.8331,1.0745,0.0170,7.1638,1.8501,1.0915,0.0063,0.0244,0.0414,false
+2048,256,460544,0.1136,0.3844,9.9550,4.6691,3.6105,0.0428,9.9978,4.7119,3.6533,0.0114,0.0241,0.0311,false
+4096,512,1838592,0.2612,1.2510,25.3538,19.9766,13.9694,0.0983,25.4522,20.0749,14.0677,0.0103,0.0130,0.0186,false
+8192,1024,7347200,0.7640,4.2459,97.5624,92.5821,55.8753,0.2876,97.8501,92.8698,56.1630,0.0078,0.0082,0.0136,false

@@ -4,7 +4,7 @@ Certified masking for attention with INT8 quantization.
 
 ## Current Phase
 
-Phase 4: Real Hugging Face model integration with Qwen2/Qwen2.5 single-layer Q/K analysis.
+Phase 9A: Triton prototype for AGLR-C CertiMask sampled scoring.
 
 ## Installation
 
@@ -14,6 +14,9 @@ pip install -e ".[dev]"
 
 # With Hugging Face support
 pip install -e ".[dev,hf]"
+
+# With Triton kernel support (requires CUDA GPU)
+pip install -e ".[dev,triton]"
 ```
 
 ## Testing
@@ -129,13 +132,119 @@ The primary metric for certificate utility is **refinement rate**, not rho alone
 
 > 已验证算法级边界回退逻辑；尚未实现只 gather ambiguous tile 的真实 FP16 refinement kernel。
 
+## Phase 9A: Triton Prototype
+
+Triton v0 accelerates the AGLR-C sampled scoring and interval computation path.
+It does **not** implement sparse attention, and does **not** claim end-to-end speedup.
+
+**Supported configuration:**
+- `block_size = 8`, `group_size = 4`, `D = 64`
+- `sample_pattern = both_diagonals` (16 samples per tile)
+- `aggregation = logsumexp`
+- K-only per-group INT8 quantization
+- Q in FP16 or FP32
+
+**Not supported in Triton v0:**
+- `topk_mean` aggregation (falls back to PyTorch)
+- `block_size != 8`, `group_size != 4`, `D != 64`
+- Sparse attention kernel
+- End-to-end latency benchmarking
+
+### Quick Start (requires CUDA + triton)
+
+```bash
+# Run tests (skips cleanly on CPU)
+pytest tests/test_triton_aglr_certimask.py -v
+
+# Synthetic benchmark
+python experiments/benchmark_aglr_triton.py \
+  --batch-size 1 --num-heads 14 --seq-len 1024 \
+  --head-dim 64 --dtype float16 --device cuda \
+  --warmup 20 --iters 100 \
+  --output-dir outputs/phase9a_triton_aglr_benchmark
+
+# Real Qwen smoke test
+python experiments/benchmark_aglr_triton.py \
+  --use-real-qwen --model-name Qwen/Qwen2.5-0.5B-Instruct \
+  --layers 8 12 16 20 --context-length 1024 \
+  --dtype float16 --device cuda \
+  --output-dir outputs/phase9a_triton_aglr_qwen_smoke
+```
+
+## Phase 9B: Triton CertiMask Profiling and Fused Certificate
+
+Phase 9B profiles the Triton CertiMask full wrapper, identifies bottlenecks,
+and implements a fused Triton partition certificate kernel.
+
+### Key Findings
+
+**Latency decomposition (B=1, H=14, L=1024, D=64, fp16, RTX 5090):**
+
+| Stage | Median (ms) | Fraction |
+|---|---|---|
+| key_quantization | 4.92 | 0.1% |
+| triton_score_interval_kernel | 0.89 | 0.0% |
+| reference_fp32_aglr_score | 0.32 | 0.0% |
+| topk_reference_mask | 322.79 | 4.5% |
+| **partition_certificate_pytorch** | **6776.28** | **95.5%** |
+| partition_certificate_fused_triton | 0.09 | 0.0% |
+| fallback_resolution | 0.14 | 0.0% |
+
+**The PyTorch partition certificate was the bottleneck at 95.5% of total time.**
+
+**Fused Triton certificate:**
+- Speedup: **73,527x** (6776 ms → 0.09 ms)
+- Decisions exact match: **True**
+- Ambiguous mask exact match: **True**
+
+**With fused certificate, optimized total: 329 ms** (down from 7096 ms).
+Remaining bottleneck: `topk_reference_mask` at 323 ms (98% of optimized total).
+
+### Real-Qwen Fallback Metrics
+
+| Layer | Fallback Rate | Row Cert Rate | Cert Keep | Cert Drop |
+|---|---|---|---|---|
+| 8 | 0.2621 | 0.1205 | 0.5122 | 0.4878 |
+| 12 | 0.0908 | 0.1635 | 0.5060 | 0.4940 |
+| 16 | 0.1009 | 0.1680 | 0.5028 | 0.4972 |
+| 20 | 0.1420 | 0.1161 | 0.5055 | 0.4945 |
+| **Mean** | **0.1214** | **0.1420** | **0.5057** | **0.4943** |
+
+### Quick Start
+
+```bash
+# Run tests
+pytest tests/test_triton_topk_certificate.py tests/test_triton_profile_metrics.py -v
+
+# Latency profiling
+python experiments/benchmark_aglr_triton_profile.py \
+  --batch-size 1 --num-heads 14 --seq-len 1024 \
+  --head-dim 64 --dtype float16 --device cuda \
+  --warmup 5 --iters 10 \
+  --output-dir outputs/phase9b_triton_profile
+
+# Benchmark with fallback metrics
+python experiments/benchmark_aglr_triton.py \
+  --use-real-qwen --model-name Qwen/Qwen2.5-0.5B-Instruct \
+  --layers 8 12 16 20 --context-length 1024 \
+  --dtype float16 --device cuda \
+  --output-dir outputs/phase9b_triton_aglr_qwen_smoke
+```
+
+### Important Notes
+
+- This is a **microbenchmark** for AGLR-C CertiMask scoring + interval + certificate
+- It does **not** include sparse attention kernel speedup
+- It does **not** claim end-to-end prefill speedup
+- Fallback metrics come from the partition certificate, not from score equality
+- The fused Triton certificate produces decisions and ambiguous masks identical to PyTorch
+
 ## Not Yet Implemented
 
-- Triton/CUDA kernels
+- Sparse attention kernel
 - INT4 quantization
 - Top-K / Top-p sampling
 - Softmax mass certificate
-- Sparse attention kernel
-- All-layer experiments
 - Long-context performance benchmarks
 - End-to-end acceleration claims
+- Triton v1: topk_mean aggregation, variable block/group sizes

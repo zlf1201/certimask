@@ -1,0 +1,12 @@
+{
+  "phase": "8C",
+  "description": "Full AGLR-C + CertiMask Quality/Work Summary",
+  "policy_csv": "outputs/phase7e_aglr_full_layer_policy/policy_by_layer.csv",
+  "certimask_csv": "outputs/phase8b_aglr_certimask_group_scan/full24_certimask_by_layer.csv",
+  "group_size": 4,
+  "ambiguity_mode": "partition",
+  "c_lowbit_values": [
+    0.25,
+    0.5
+  ]
+}

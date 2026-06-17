@@ -1,0 +1,22 @@
+{
+  "loop_topk_mask_ms": 321.4575,
+  "vectorized_topk_mask_ms": 0.1564,
+  "triton_topk_mask_ms": null,
+  "selected_topk_mode": "vectorized",
+  "topk_mask_speedup": 2056,
+  "mask_exact_match": true,
+  "mismatch_count": 0,
+  "phase9b_total_ms": 329.15,
+  "phase9c_total_ms": 6.44,
+  "speedup_vs_phase9b": 51.1,
+  "largest_remaining_bottleneck": "key_quantization (4.81 ms, 74.5%)",
+  "recommended_next_step": "Optimize key quantization or accept 6.4ms total. Sparse attention kernel is next major opportunity.",
+  "breakdown": {
+    "key_quantization_ms": 4.8056,
+    "triton_score_interval_kernel_ms": 0.8895,
+    "reference_fp32_aglr_score_ms": 0.3590,
+    "topk_reference_mask_vectorized_ms": 0.1564,
+    "partition_certificate_fused_triton_ms": 0.0920,
+    "fallback_resolution_ms": 0.1400
+  }
+}

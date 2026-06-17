@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Phase 7D: AGLR-C v1 quality-work frontier scan.
+"""Phase 7E: Full 24-layer AGLR-C v1 policy scan.
 
-Scans sparsity, block_size, local_blocks, and aggregation to build
-per-layer Pareto frontiers and establish final layer-wise policy.
+Uses Phase 7D optimized search space (block_size=8, logsumexp aggregation)
+to establish final layer-wise policy for all 24 layers.
 """
 
 from __future__ import annotations
@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+from collections import Counter
 from pathlib import Path
 
 import torch
@@ -50,25 +51,24 @@ DEFAULT_TEXT = (
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Phase 7D quality-work frontier")
+    p = argparse.ArgumentParser(description="Phase 7E full 24-layer policy scan")
     p.add_argument("--model-name", type=str, default="Qwen/Qwen2.5-0.5B-Instruct")
     p.add_argument("--context-length", type=int, default=1024)
-    p.add_argument("--block-sizes", type=int, nargs="+", default=[8, 16])
+    p.add_argument("--block-sizes", type=int, nargs="+", default=[8])
     p.add_argument(
         "--target-sparsities", type=float, nargs="+",
-        default=[0.30, 0.40, 0.50, 0.60, 0.65, 0.70, 0.75, 0.80],
+        default=[0.30, 0.50, 0.65, 0.70, 0.75],
     )
-    p.add_argument("--local-blocks", type=int, nargs="+", default=[0, 1, 2, 4])
     p.add_argument("--layers", type=int, nargs="+",
-                    default=[0, 1, 2, 4, 5, 8, 12, 13, 16, 20, 22, 23])
-    p.add_argument("--all-layers", action="store_true")
+                    default=list(range(24)))
+    p.add_argument("--local-blocks", type=int, nargs="+", default=[0, 1, 2])
     p.add_argument("--aggregations", type=str, nargs="+",
                     default=["logsumexp", "topk_mean"])
     p.add_argument("--text", type=str, default=None)
     p.add_argument("--device", type=str, default="cpu")
     p.add_argument("--dtype", type=str, default="float32")
     p.add_argument("--output-dir", type=str,
-                    default="outputs/phase7d_aglr_quality_work_frontier")
+                    default="outputs/phase7e_aglr_full_layer_policy")
     return p.parse_args()
 
 
@@ -146,48 +146,10 @@ def compute_quality(
     }
 
 
-def compute_pareto_frontier(
-    results: list[dict[str, float | int | str | bool]],
-) -> list[dict[str, float | int | str | bool]]:
-    """Compute Pareto frontier: minimize work_fraction, maximize kept_mass, minimize l2.
-
-    A dominates B if A.work <= B.work AND A.mass >= B.mass AND A.l2 <= B.l2
-    with at least one strict inequality.
-    """
-    def _dominates(a: dict[str, float | int | str | bool],
-                  b: dict[str, float | int | str | bool]) -> bool:
-        """Check if a dominates b."""
-        aw = a["attention_tile_work_fraction"]
-        bw = b["attention_tile_work_fraction"]
-        am = a["kept_attention_mass_mean"]
-        bm = b["kept_attention_mass_mean"]
-        al = a["output_l2_relative_mean"]
-        bl = b["output_l2_relative_mean"]
-        return (aw <= bw and am >= bm and al <= bl
-                and (aw < bw or am > bm or al < bl))
-
-    frontier: list[dict[str, float | int | str | bool]] = []
-    for candidate in results:
-        dominated = False
-        to_remove: list[int] = []
-        for i, existing in enumerate(frontier):
-            if _dominates(existing, candidate):
-                dominated = True
-                break
-            if _dominates(candidate, existing):
-                to_remove.append(i)
-        if not dominated:
-            for i in reversed(to_remove):
-                frontier.pop(i)
-            frontier.append(candidate)
-    return frontier
-
-
 def select_policy(
     results: list[dict[str, float | int | str | bool]],
 ) -> dict[str, float | int | str | bool]:
     """Select best policy per layer following priority rules."""
-    # Priority: strict > practical > relaxed > quality_only > fallback
     for pass_type, key in [
         ("strict_pass", "go_strict"),
         ("practical_pass", "go_practical"),
@@ -202,20 +164,32 @@ def select_policy(
             policy["fallback_reason"] = ""
             return policy
 
-    # Fallback
+    # Fallback with detailed reason
     best = min(results, key=lambda r: r["output_l2_relative_mean"])
     policy = dict(best)
     policy["decision"] = "fallback_quality"
 
-    # Determine fallback reason
-    has_quality = any(r["quality_only_pass"] for r in results)
-    has_work = any(r["attention_tile_work_fraction"] <= 0.55 for r in results)
-    if not has_quality and not has_work:
-        policy["fallback_reason"] = "both_quality_and_work_failure"
-    elif not has_quality:
-        policy["fallback_reason"] = "quality_failure"
-    else:
+    # Determine specific fallback reason
+    km = float(best["kept_attention_mass_mean"])
+    cos = float(best["output_cosine_mean"])
+    l2 = float(best["output_l2_relative_mean"])
+    wf = float(best["attention_tile_work_fraction"])
+
+    quality_only = km >= 0.90 and cos >= 0.95 and l2 <= 0.20
+    if not quality_only:
+        failures = []
+        if km < 0.90:
+            failures.append("mass_failure")
+        if cos < 0.95:
+            failures.append("cosine_failure")
+        if l2 > 0.20:
+            failures.append("l2_failure")
+        policy["fallback_reason"] = failures[0] if len(failures) == 1 else "multiple_failures"
+    elif wf > 0.55:
         policy["fallback_reason"] = "work_failure"
+    else:
+        policy["fallback_reason"] = "unknown"
+
     return policy
 
 
@@ -247,8 +221,6 @@ def main() -> None:
     print(f"Sequence length: {input_ids.shape[1]}")
 
     layers = args.layers
-    if args.all_layers:
-        layers = list(range(len(model.model.layers)))
     print(f"Scanning layers: {layers}")
 
     config = {
@@ -263,7 +235,6 @@ def main() -> None:
 
     all_rows: list[dict[str, float | int | str | bool]] = []
     policy_rows: list[dict[str, float | int | str | bool]] = []
-    pareto_rows: list[dict[str, float | int | str | bool]] = []
 
     for layer_idx in layers:
         print(f"\n{'='*60}")
@@ -298,7 +269,6 @@ def main() -> None:
             nb = summaries.num_blocks
             valid_scores = valid_block_mask[:, :, :nb, :nb]
 
-            # Mean-pooled baseline per block_size
             mp_results: dict[float, dict[str, float]] = {}
 
             for target_sp in args.target_sparsities:
@@ -336,7 +306,6 @@ def main() -> None:
                     **oracle_q,
                 }
                 all_rows.append(row)
-                layer_results.append(row)
 
                 # Mean-pooled row
                 row = {
@@ -346,7 +315,6 @@ def main() -> None:
                     **mp_q,
                 }
                 all_rows.append(row)
-                layer_results.append(row)
 
                 # AGLR variants
                 for aggregation in args.aggregations:
@@ -388,16 +356,10 @@ def main() -> None:
                         all_rows.append(row)
                         layer_results.append(row)
 
-        # Compute Pareto frontier for this layer (AGLR configs only)
+        # Select policy (AGLR configs only)
         aglr_results = [
             r for r in layer_results if r["mask_type"] == "aglr_antidiagonal"
         ]
-        frontier = compute_pareto_frontier(aglr_results)
-        for rank, entry in enumerate(frontier):
-            entry["frontier_rank"] = rank
-            pareto_rows.append(entry)
-
-        # Select policy (AGLR configs only; baselines are for comparison only)
         policy = select_policy(aglr_results)
         policy["layer"] = layer_idx
         policy_rows.append(policy)
@@ -425,10 +387,9 @@ def main() -> None:
                 w.writeheader()
                 w.writerows(rows)
 
-    save_csv(all_rows, "quality_work_results.csv")
-    save_csv(pareto_rows, "pareto_frontier_by_layer.csv")
+    save_csv(all_rows, "quality_by_layer_config.csv")
 
-    # Policy CSV with selected fields
+    # Policy CSV (column names match Phase 7E spec)
     clean_policy = []
     for p in policy_rows:
         clean_policy.append({
@@ -442,9 +403,60 @@ def main() -> None:
             "selected_kept_mass": p["kept_attention_mass_mean"],
             "selected_cosine": p["output_cosine_mean"],
             "selected_l2": p["output_l2_relative_mean"],
+            "strict_pass": p["strict_pass"],
+            "practical_pass": p["practical_pass"],
+            "relaxed_pass": p["relaxed_pass"],
+            "quality_only_pass": p["quality_only_pass"],
             "fallback_reason": p.get("fallback_reason", ""),
         })
     save_csv(clean_policy, "policy_by_layer.csv")
+
+    # Oracle gap CSV
+    def _oracle_gap_for(
+        lay: int,
+    ) -> tuple[float, float, float, float]:
+        """Return (oracle_m, oracle_l, mp_m, mp_l) for a given layer."""
+        oracle_rows_l = [
+            r for r in all_rows
+            if r["layer"] == lay and r["mask_type"] == "oracle_block_mass"
+        ]
+        mp_rows_l = [
+            r for r in all_rows
+            if r["layer"] == lay and r["mask_type"] == "mean_pooled_score"
+        ]
+        def _max_field(rows: list[dict], key: str, default: float) -> float:
+            return max(float(r[key]) for r in rows) if rows else default
+
+        def _min_field(rows: list[dict], key: str, default: float) -> float:
+            return min(float(r[key]) for r in rows) if rows else default
+
+        km_key = "kept_attention_mass_mean"
+        l2_key = "output_l2_relative_mean"
+        o_m = _max_field(oracle_rows_l, km_key, 1.0)
+        o_l = _min_field(oracle_rows_l, l2_key, 0.0)
+        m_m = _max_field(mp_rows_l, km_key, 0.0)
+        m_l = _max_field(mp_rows_l, l2_key, 1.0)
+        return o_m, o_l, m_m, m_l
+
+    oracle_rows: list[dict[str, float | int | str]] = []
+    for p in policy_rows:
+        lay = p["layer"]
+        oracle_m, oracle_l, mp_m, mp_l = _oracle_gap_for(lay)
+
+        oracle_rows.append({
+            "layer": lay,
+            "oracle_mass": oracle_m,
+            "oracle_l2": oracle_l,
+            "mean_pooled_mass": mp_m,
+            "mean_pooled_l2": mp_l,
+            "selected_mass": float(p["kept_attention_mass_mean"]),
+            "selected_l2": float(p["output_l2_relative_mean"]),
+            "oracle_gap_mass": oracle_m - float(p["kept_attention_mass_mean"]),
+            "oracle_gap_l2": float(p["output_l2_relative_mean"]) - oracle_l,
+            "improvement_over_mp_mass": float(p["kept_attention_mass_mean"]) - mp_m,
+            "improvement_over_mp_l2": mp_l - float(p["output_l2_relative_mean"]),
+        })
+    save_csv(oracle_rows, "oracle_gap_by_layer.csv")
 
     # Summary
     go_strict = [p["layer"] for p in policy_rows if p["decision"] == "go_strict"]
@@ -453,36 +465,61 @@ def main() -> None:
     quality_only = [p["layer"] for p in policy_rows if p["decision"] == "quality_only_high_work"]
     fallback = [p["layer"] for p in policy_rows if p["decision"] == "fallback_quality"]
 
-    sel = [p for p in policy_rows if p["attention_tile_work_fraction"] > 0]
+    sel = [p for p in policy_rows]
     mean_wf = sum(float(p["attention_tile_work_fraction"]) for p in sel) / len(sel) if sel else 0
     mean_km = sum(float(p["kept_attention_mass_mean"]) for p in sel) / len(sel) if sel else 0
     mean_cos = sum(float(p["output_cosine_mean"]) for p in sel) / len(sel) if sel else 0
     mean_l2 = sum(float(p["output_l2_relative_mean"]) for p in sel) / len(sel) if sel else 0
 
-    # Phase 7C comparison
-    phase7c_go = {3, 8, 12, 13, 20}
-    phase7c_cond = {0, 1, 2, 4, 5}
+    # AGLR vs mean-pooled
+    aglr_rows_all = [r for r in all_rows if r["mask_type"] == "aglr_antidiagonal"]
+    mp_rows_all = [r for r in all_rows if r["mask_type"] == "mean_pooled_score"]
+    if aglr_rows_all and mp_rows_all:
+        avg_aglr_mass = (
+            sum(r["kept_attention_mass_mean"] for r in aglr_rows_all)
+            / len(aglr_rows_all)
+        )
+        avg_mp_mass = (
+            sum(r["kept_attention_mass_mean"] for r in mp_rows_all)
+            / len(mp_rows_all)
+        )
+        avg_aglr_l2 = (
+            sum(r["output_l2_relative_mean"] for r in aglr_rows_all)
+            / len(aglr_rows_all)
+        )
+        avg_mp_l2 = (
+            sum(r["output_l2_relative_mean"] for r in mp_rows_all)
+            / len(mp_rows_all)
+        )
+        mean_imp_mass = avg_aglr_mass - avg_mp_mass
+        mean_imp_l2 = avg_mp_l2 - avg_aglr_l2
+    else:
+        mean_imp_mass = 0.0
+        mean_imp_l2 = 0.0
 
-    current_go = set(go_strict) | set(go_practical)
-    current_cond = set(cond_relaxed) | set(quality_only)
+    # CertiMask readiness
+    go_count = len(go_strict) + len(go_practical)
+    ready = (
+        go_count >= 12
+        and len(fallback) <= 3
+        and mean_wf <= 0.50
+        and mean_km >= 0.90
+        and mean_cos >= 0.98
+        and mean_l2 <= 0.12
+    )
+    readiness = (
+        "ready_for_topk_certificate_design"
+        if ready
+        else "needs_indexer_or_policy_improvement"
+    )
 
-    improved = []
-    degraded = []
-    for lay in layers:
-        was_go = lay in phase7c_go
-        was_cond = lay in phase7c_cond
-        is_go = lay in current_go
-        is_cond = lay in current_cond
-
-        rank_old = 0 if was_go else (1 if was_cond else 2)
-        rank_new = 0 if is_go else (1 if is_cond else 2)
-        if rank_new < rank_old:
-            improved.append(lay)
-        elif rank_new > rank_old:
-            degraded.append(lay)
+    bs_counts = dict(Counter(int(p.get("block_size", 0)) for p in policy_rows))
+    lb_counts = dict(Counter(int(p.get("local_blocks", 0)) for p in policy_rows))
+    sp_counts = dict(Counter(float(p.get("target_sparsity", 0)) for p in policy_rows))
+    agg_counts = dict(Counter(str(p.get("aggregation", "")) for p in policy_rows))
 
     summary = {
-        "scanned_layers": layers,
+        "total_layers": len(layers),
         "go_strict_layers": go_strict,
         "go_practical_layers": go_practical,
         "conditional_relaxed_layers": cond_relaxed,
@@ -492,41 +529,83 @@ def main() -> None:
         "mean_selected_kept_mass": mean_km,
         "mean_selected_cosine": mean_cos,
         "mean_selected_l2": mean_l2,
-        "layers_improved_from_phase7c": improved,
-        "layers_degraded_from_phase7c": degraded,
-        "recommended_next_step": "",
+        "mean_improvement_over_mean_pooled_mass": mean_imp_mass,
+        "mean_improvement_over_mean_pooled_l2": mean_imp_l2,
+        "selected_block_size_counts": bs_counts,
+        "selected_local_blocks_counts": lb_counts,
+        "selected_target_sparsity_counts": sp_counts,
+        "selected_aggregation_counts": agg_counts,
+        "certimask_readiness": readiness,
     }
-
-    if len(go_strict) + len(go_practical) >= len(layers) * 0.6:
-        summary["recommended_next_step"] = "Proceed to CertiMask top-k certificate"
-    elif len(go_strict) + len(go_practical) + len(cond_relaxed) >= len(layers) * 0.6:
-        summary["recommended_next_step"] = "Lower quality thresholds or test larger model"
-    else:
-        summary["recommended_next_step"] = (
-            "Current indexer insufficient; consider alternative approaches"
-        )
 
     with open(output_dir / "summary_by_decision.json", "w") as f:
         json.dump(summary, f, indent=2)
 
+    # README
+    readme_lines = [
+        "# Phase 7E: Full 24-Layer AGLR-C v1 Policy Scan",
+        "",
+        f"**Model:** {args.model_name}",
+        f"**Context length:** {args.context_length}",
+        f"**Layers scanned:** {len(layers)} ({layers[0]}..{layers[-1]})",
+        "",
+        "## Decision Distribution",
+        "",
+        "| Decision | Count | Layers |",
+        "|---|---|---|",
+        f"| go_strict | {len(go_strict)} | {go_strict} |",
+        f"| go_practical | {len(go_practical)} | {go_practical} |",
+        f"| conditional_relaxed | {len(cond_relaxed)} | {cond_relaxed} |",
+        f"| quality_only_high_work | {len(quality_only)} | {quality_only} |",
+        f"| fallback_quality | {len(fallback)} | {fallback} |",
+        "",
+        "## Aggregate Metrics",
+        "",
+        f"- Mean selected work fraction: {mean_wf:.4f}",
+        f"- Mean selected kept mass: {mean_km:.4f}",
+        f"- Mean selected cosine: {mean_cos:.4f}",
+        f"- Mean selected L2: {mean_l2:.4f}",
+        f"- Mean improvement over mean-pooled (mass): +{mean_imp_mass:.4f}",
+        f"- Mean improvement over mean-pooled (L2): -{mean_imp_l2:.4f}",
+        "",
+        f"## CertiMask Readiness: {readiness}",
+        "",
+        "## Per-Layer Policy",
+        "",
+        "| Layer | Decision | BS | Sparsity | LB | Agg | Work | Mass | Cosine | L2 | Fallback |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
+    ]
+    for p in clean_policy:
+        readme_lines.append(
+            f"| {p['layer']} | {p['decision']} | {p['selected_block_size']} "
+            f"| {p['selected_target_sparsity']} | {p['selected_local_blocks']} "
+            f"| {p['selected_aggregation']} | {p['selected_work_fraction']:.4f} "
+            f"| {p['selected_kept_mass']:.4f} | {p['selected_cosine']:.4f} "
+            f"| {p['selected_l2']:.4f} | {p['fallback_reason']} |"
+        )
+    with open(output_dir / "README_results.md", "w") as f:
+        f.write("\n".join(readme_lines) + "\n")
+
     # Print summary
     print()
     print("=" * 70)
-    print("QUALITY-WORK FRONTIER SUMMARY")
+    print("FULL 24-LAYER AGLR-C v1 POLICY SCAN")
     print("=" * 70)
-    print(f"  Go strict:       {go_strict}")
-    print(f"  Go practical:    {go_practical}")
-    print(f"  Conditional:     {cond_relaxed}")
-    print(f"  Quality-only:    {quality_only}")
-    print(f"  Fallback:        {fallback}")
+    print(f"  Scanned layers: {layers}")
+    print(f"  Go strict:          {go_strict}")
+    print(f"  Go practical:       {go_practical}")
+    print(f"  Conditional:        {cond_relaxed}")
+    print(f"  Quality-only:       {quality_only}")
+    print(f"  Fallback:           {fallback}")
     print()
     print(f"  Mean work fraction: {mean_wf:.4f}")
     print(f"  Mean kept mass:     {mean_km:.4f}")
     print(f"  Mean cosine:        {mean_cos:.4f}")
     print(f"  Mean L2:            {mean_l2:.4f}")
+    print(f"  AGLR vs MP mass:    +{mean_imp_mass:.4f}")
+    print(f"  AGLR vs MP L2:      -{mean_imp_l2:.4f}")
     print()
-    print(f"  Improved from Phase 7C: {improved}")
-    print(f"  Degraded from Phase 7C: {degraded}")
+    print(f"  CertiMask readiness: {readiness}")
     print()
     print("  Per-layer policy:")
     for p in clean_policy:

@@ -2,6 +2,12 @@
 
 from contextlib import suppress as _suppress
 
+from certimask.aglr_certimask import (
+    AGLRCertiMaskMetrics,
+    AGLRCertiMaskResult,
+    aglr_certimask_topk,
+    compute_aglr_certimask_metrics,
+)
 from certimask.aglr_indexer import (
     AGLRMaskResult,
     BlockLandmarks,
@@ -79,6 +85,15 @@ from certimask.scoring import (
     reference_scores,
 )
 from certimask.synthetic import generate_synthetic_summaries
+from certimask.topk_certificate import (
+    AMBIGUOUS,
+    DROP,
+    INVALID,
+    KEEP,
+    TopKCertificateResult,
+    certified_topk_mask,
+    logsumexp_interval,
+)
 
 # HF extraction is optional
 with _suppress(ImportError):
@@ -89,8 +104,25 @@ with _suppress(ImportError):
         extract_qkv_from_qwen2,
     )
 
+# Vectorized top-k (always available)
+from certimask.vectorized_topk import VectorizedTopKMaskResult, vectorized_topk_mask
+
+# Triton kernels are optional (requires CUDA + triton)
+with _suppress(ImportError):
+    from certimask.triton_aglr_kernels import triton_aglr_logsumexp_scoring
+    from certimask.triton_aglr_ops import (
+        TritonAGLRCertiMaskResult,
+        compute_fallback_metrics,
+        triton_aglr_certimask_logsumexp_g4,
+    )
+    from certimask.triton_topk_certificate import triton_certified_topk_mask_partition
+
 __all__ = [
+    "AGLRCertiMaskMetrics",
+    "AGLRCertiMaskResult",
     "AGLRMaskResult",
+    "AMBIGUOUS",
+    "VectorizedTopKMaskResult",
     "AttentionQualityMetrics",
     "AttentionReconstructionDiagnostics",
     "BenefitProxyMetrics",
@@ -99,11 +131,14 @@ __all__ = [
     "BoundMetrics",
     "CertiMaskDecision",
     "CertiMaskResult",
+    "DROP",
     "DiagnosticQuantiles",
     "ExtractedQK",
     "ExtractedQKV",
     "GroupQuantizedScoreResult",
     "GroupQuantizedTensor",
+    "INVALID",
+    "KEEP",
     "KOnlyGroupScoreResult",
     "KOnlyScoreResult",
     "MaskMetrics",
@@ -112,11 +147,17 @@ __all__ = [
     "QuantizedTensor",
     "RefinementDecomposition",
     "ScoreBounds",
+    "TopKCertificateResult",
+    "TritonAGLRCertiMaskResult",
     "aglr_adaptive_mass_budget_mask",
+    "aglr_certimask_topk",
     "aglr_local_plus_landmark_mask",
     "block_sparse_attention_output",
     "certified_threshold_mask",
+    "certified_topk_mask",
     "combine_aglr_scores",
+    "compute_aglr_certimask_metrics",
+    "compute_fallback_metrics",
     "compute_antidiagonal_block_scores",
     "compute_landmark_block_scores",
     "compute_attention_quality",
@@ -143,6 +184,7 @@ __all__ = [
     "generate_synthetic_summaries",
     "group_quantized_int8_scores",
     "local_window_block_mask",
+    "logsumexp_interval",
     "k_only_per_group_scores",
     "k_only_per_vector_scores",
     "make_block_causal_valid_mask",
@@ -157,5 +199,9 @@ __all__ = [
     "select_block_landmarks",
     "reference_scores",
     "thresholds_for_target_sparsity",
+    "triton_aglr_certimask_logsumexp_g4",
+    "triton_aglr_logsumexp_scoring",
+    "triton_certified_topk_mask_partition",
     "validate_score_bounds",
+    "vectorized_topk_mask",
 ]

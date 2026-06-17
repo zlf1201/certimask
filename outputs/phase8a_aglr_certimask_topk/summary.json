@@ -1,0 +1,17 @@
+{
+  "tested_layers": [
+    3,
+    8,
+    12,
+    13,
+    16,
+    20
+  ],
+  "all_exact_match": true,
+  "total_mismatch_count": 0,
+  "mean_row_certification_rate": 0.12723214285714285,
+  "mean_ambiguous_rate": 0.13393578119232188,
+  "mean_fallback_rate": 0.13393578119232188,
+  "group_size": 16,
+  "recommended_next_step": "Proceed to Phase 8B: full 24-layer scan, group-size scan, or boundary optimization"
+}

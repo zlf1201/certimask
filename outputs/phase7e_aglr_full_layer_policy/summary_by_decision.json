@@ -1,0 +1,61 @@
+{
+  "total_layers": 24,
+  "go_strict_layers": [
+    3,
+    7,
+    8,
+    9,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21
+  ],
+  "go_practical_layers": [
+    2,
+    4,
+    5,
+    6,
+    10
+  ],
+  "conditional_relaxed_layers": [
+    0,
+    1,
+    23
+  ],
+  "quality_only_high_work_layers": [
+    22
+  ],
+  "fallback_quality_layers": [],
+  "mean_selected_work_fraction": 0.3765241440568476,
+  "mean_selected_kept_mass": 0.9113240167498589,
+  "mean_selected_cosine": 0.9847317859530449,
+  "mean_selected_l2": 0.10548787408818801,
+  "mean_improvement_over_mean_pooled_mass": 0.09744596837295427,
+  "mean_improvement_over_mean_pooled_l2": 0.24378848079488513,
+  "selected_block_size_counts": {
+    "8": 24
+  },
+  "selected_local_blocks_counts": {
+    "0": 23,
+    "2": 1
+  },
+  "selected_target_sparsity_counts": {
+    "0.5": 8,
+    "0.75": 8,
+    "0.7": 5,
+    "0.65": 2,
+    "0.3": 1
+  },
+  "selected_aggregation_counts": {
+    "logsumexp": 23,
+    "topk_mean": 1
+  },
+  "certimask_readiness": "ready_for_topk_certificate_design"
+}

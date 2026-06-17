@@ -21,6 +21,9 @@ hf = [
     "transformers",
     "safetensors",
 ]
+triton = [
+    "triton",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,0 +1,16 @@
+{
+  "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
+  "context_length": 1024,
+  "layers": [
+    3,
+    8,
+    12,
+    13,
+    16,
+    20
+  ],
+  "block_size": 8,
+  "group_size": 16,
+  "device": "cuda",
+  "dtype": "float32"
+}
