@@ -45,3 +45,12 @@ ENV/
 *.swp
 *.swo
 *~
+
+# Benchmark outputs and generated data
+outputs/
+*.log
+*.tmp
+*.pt
+*.pth
+*.safetensors
+*.jsonl

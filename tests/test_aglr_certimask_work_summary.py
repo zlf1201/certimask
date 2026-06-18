@@ -93,13 +93,18 @@ def _write_certimask_csv(path: Path, *, layer2_unsupported: bool = True) -> None
 
 
 # ---------------------------------------------------------------------------
-# Import the module under test (will be created next)
+# Import the module under test
 # ---------------------------------------------------------------------------
 def _import_summary():
     """Import the summary builder from the experiment module."""
     import importlib
+    import sys
+    # Ensure project root is on sys.path for experiments.* imports
+    project_root = str(Path(__file__).parent.parent)
+    if project_root not in sys.path:
+        sys.path.insert(0, project_root)
     mod = importlib.import_module(
-        "experiments.run_aglr_certimask_work_summary"
+        "experiments.archive.run_aglr_certimask_work_summary"
     )
     return mod
 

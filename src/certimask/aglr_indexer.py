@@ -240,6 +240,12 @@ def aglr_local_plus_landmark_mask(
 ) -> AGLRMaskResult:
     """Create mask with mandatory local blocks + landmark-scored extras.
 
+    .. warning::
+        **Historical/reference mask construction.** This function uses a
+        Python triple-nested loop over (batch, heads, q_blocks) and is
+        slow for large tensors. Use :func:`certimask.vectorized_topk.vectorized_topk_mask`
+        for optimized top-k mask construction.
+
     Args:
         landmark_scores: [B, H, Q_blk, K_blk] block scores.
         target_sparsity: Fraction of valid tiles to drop (mutually exclusive

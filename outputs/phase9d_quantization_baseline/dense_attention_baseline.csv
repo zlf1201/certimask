@@ -1,3 +1,0 @@
-method,median_ms,p10_ms,p90_ms,mean_ms,std_ms
-dense_sdpa,0.1990,0.1969,0.2005,0.1988,0.0015
-dense_manual,0.2954,0.2935,0.2984,0.2957,0.0020

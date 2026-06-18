@@ -1,2 +1,0 @@
-layer,pytorch_ms,triton_ms,fp32_ms,speedup_vs_pytorch,speedup_vs_fp32,max_q_diff,max_l_diff,max_u_diff,exact_match,mismatch_count
-synthetic,8.8758,5.8824,0.3592,1.5089,0.0611,0.00000143,0.00000143,0.00000143,True,0

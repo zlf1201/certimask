@@ -1,9 +1,0 @@
-{
-  "model_name": "Qwen/Qwen2.5-0.5B-Instruct",
-  "layer_index": 0,
-  "context_length": 1024,
-  "block_size": 16,
-  "target_sparsity": 0.85,
-  "device": "cpu",
-  "dtype": "float32"
-}

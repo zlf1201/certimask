@@ -9,7 +9,7 @@ import math
 # ---------------------------------------------------------------------------
 import sys
 
-sys.path.insert(0, "experiments")
+sys.path.insert(0, "experiments/active")
 
 from benchmark_aglr_crossover import (
     _estimate_alpha,

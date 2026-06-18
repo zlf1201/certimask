@@ -1,9 +1,0 @@
-stage,median_ms,p10_ms,p90_ms,mean_ms,std_ms
-key_quantization,4.9208,4.8973,5.0290,4.9330,0.0410
-triton_score_interval_kernel,0.8862,0.8836,0.8991,0.8882,0.0050
-reference_fp32_aglr_score,0.3161,0.3045,0.3379,0.3195,0.0102
-topk_reference_mask,322.7916,321.1342,323.4705,322.3501,0.8847
-partition_certificate_pytorch,6776.2839,6740.5010,6882.1123,6786.6989,47.7298
-partition_certificate_fused_triton,0.0922,0.0898,0.0983,0.0929,0.0028
-fallback_resolution,0.1409,0.1378,0.1512,0.1424,0.0044
-total_triton_certimask,7095.6082,7062.7441,7178.9722,7098.2397,31.4307

@@ -105,6 +105,14 @@ def certified_topk_mask(
 ) -> TopKCertificateResult:
     """Certify top-k partition using score intervals.
 
+    .. warning::
+        **Reference / validation implementation.** This function uses a
+        Python triple-nested loop over (batch, heads, q_blocks) and is
+        **slow for large tensors**. Do not use in optimized Triton benchmarks.
+
+        Use :func:`certimask.triton_topk_certificate.triton_certified_topk_mask_partition`
+        when CUDA/Triton is available (~73,000x faster).
+
     For each query row, the FP reference selects the top-k scoring blocks.
     This function checks whether the low-bit score intervals support the
     same partition, and identifies boundary (ambiguous) candidates when

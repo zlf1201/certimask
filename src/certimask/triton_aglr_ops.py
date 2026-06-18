@@ -154,7 +154,11 @@ def _compute_reference_mask(
     local_blocks: int,
     valid_mask: torch.Tensor,
 ) -> torch.Tensor:
-    """Compute the FP32 reference AGLR mask using loop-based approach."""
+    """Compute the FP32 reference AGLR mask using loop-based approach.
+
+    .. warning::
+        Slow path — uses Python row loops. Prefer ``_compute_reference_mask_vectorized``.
+    """
     from certimask.aglr_indexer import aglr_local_plus_landmark_mask
 
     result = aglr_local_plus_landmark_mask(
@@ -284,6 +288,12 @@ def triton_aglr_certimask_logsumexp_g4(
     topk_mask_mode: str = "vectorized",
 ) -> TritonAGLRCertiMaskResult:
     """Triton-accelerated AGLR-C CertiMask with logsumexp and group_size=4.
+
+    .. note::
+        This function uses the PyTorch ``certified_topk_mask`` internally.
+        For benchmarks that need the fused Triton certificate, call
+        ``triton_certified_topk_mask_partition`` directly after
+        ``triton_aglr_logsumexp_scoring``.
 
     Fixed parameters:
         block_size=8, group_size=4, sample_pattern=both_diagonals,

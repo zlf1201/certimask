@@ -273,6 +273,14 @@ def aglr_certimask_topk(
 ) -> AGLRCertiMaskResult:
     """Certify AGLR-C v1 top-k block selection with INT8 K-only quantization.
 
+    .. warning::
+        **Reference-first validation path.** Computes FP32 reference scores
+        and reference mask before certification. Useful for correctness
+        validation, not a deployable online path.
+
+        For optimized benchmarks, use
+        :func:`certimask.triton_aglr_ops.triton_aglr_certimask_logsumexp_g4`.
+
     Args:
         query: [B, H, L, D] FP32 query tensor.
         key: [B, H, L, D] FP32 key tensor.
