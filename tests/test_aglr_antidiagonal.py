@@ -6,7 +6,6 @@ import pytest
 import torch
 
 from certimask.aglr_indexer import (
-    aglr_local_plus_landmark_mask,
     combine_aglr_scores,
     compute_antidiagonal_block_scores,
 )
@@ -189,30 +188,6 @@ class TestCombineScores:
     def test_both_none_raises(self) -> None:
         with pytest.raises(ValueError, match="At least one"):
             combine_aglr_scores()
-
-
-class TestAntidiagonalWithAGLRMask:
-    """Test antidiagonal scores work with AGLR mask selection."""
-
-    def test_antidiagonal_mask_no_future(self) -> None:
-        q = torch.randn(1, 1, 16, 8)
-        k = torch.randn(1, 1, 16, 8)
-        valid = torch.ones(1, 1, 4, 4, dtype=torch.bool)
-        for i in range(4):
-            for j in range(i + 1, 4):
-                valid[0, 0, i, j] = False
-
-        scores = compute_antidiagonal_block_scores(
-            q, k, block_size=4, sample_pattern="anti_diagonal",
-            aggregation="topk_mean", valid_mask=valid,
-        )
-        result = aglr_local_plus_landmark_mask(
-            scores, target_sparsity=0.5, local_blocks=1, valid_mask=valid,
-        )
-        # No future blocks
-        for i in range(4):
-            for j in range(i + 1, 4):
-                assert result.mask[0, 0, i, j].item() is False
 
 
 class TestQualityPassCriteria:

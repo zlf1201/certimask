@@ -1,8 +1,9 @@
 """High-level Triton AGLR-C CertiMask operations.
 
-Provides ``triton_aglr_certimask_logsumexp_g4`` — the main entry point that
-combines Triton scoring with the existing PyTorch partition certificate.
-Also provides ``compute_fallback_metrics`` for certificate fallback analysis.
+Provides ``triton_aglr_certimask_logsumexp_g4_optimized`` — the main entry
+point that combines Triton scoring with the fused Triton partition certificate.
+Also provides ``triton_aglr_certimask_logsumexp_g4`` as a reference path
+that uses the slow PyTorch certificate internally.
 """
 
 from __future__ import annotations
@@ -423,6 +424,156 @@ def triton_aglr_certimask_logsumexp_g4(
         upper_scores=triton_upper,
         decisions=topk_result.decisions,
         ambiguous=topk_result.ambiguous,
+        mask=mask,
+        reference_mask=reference_mask,
+        exact_match=exact_match,
+        mismatch_count=mismatch_count,
+    )
+
+
+def triton_aglr_certimask_logsumexp_g4_optimized(
+    query: torch.Tensor,
+    key: torch.Tensor,
+    *,
+    target_sparsity: float,
+    local_blocks: int = 0,
+    valid_mask: torch.Tensor | None = None,
+    reference_scores: torch.Tensor | None = None,
+    scale_by_sqrt_dim: bool = True,
+) -> TritonAGLRCertiMaskResult:
+    """Optimized Triton AGLR-C CertiMask with fused Triton certificate.
+
+    Uses the fused Triton partition certificate kernel instead of the slow
+    PyTorch loop-based ``certified_topk_mask``. This is the recommended
+    entry point for benchmarks and validation.
+
+    Fixed parameters:
+        block_size=8, group_size=4, sample_pattern=both_diagonals,
+        aggregation=logsumexp, ambiguity_mode=partition.
+
+    Args:
+        query: [B, H, L, D] FP16 or FP32 query on CUDA.
+        key: [B, H, L, D] FP16 or FP32 key on CUDA.
+        target_sparsity: Fraction of valid tiles to drop.
+        local_blocks: Mandatory local blocks per query row.
+        valid_mask: Optional [B, H, Q_blk, K_blk] bool causal mask.
+        reference_scores: Optional pre-computed FP32 reference scores.
+        scale_by_sqrt_dim: Whether to scale dots by 1/sqrt(d).
+
+    Returns:
+        TritonAGLRCertiMaskResult with scores, certificate, and mask.
+
+    Raises:
+        RuntimeError: If CUDA or Triton is not available.
+    """
+    from certimask.masking import make_block_causal_valid_mask
+    from certimask.triton_aglr_kernels import triton_aglr_logsumexp_scoring
+    from certimask.triton_topk_certificate import triton_certified_topk_mask_partition
+
+    batch, heads, seq_len, dim = query.shape
+    block_size = 8
+    group_size = 4
+    num_blocks = seq_len // block_size
+
+    assert query.device.type == "cuda", f"Expected CUDA tensor, got {query.device}"
+    assert dim == 64, f"Expected D=64, got {dim}"
+
+    # Valid mask
+    if valid_mask is None:
+        valid_block_mask = make_block_causal_valid_mask(
+            num_blocks, num_blocks, device=query.device,
+        ).expand(batch, heads, num_blocks, num_blocks)
+    else:
+        valid_block_mask = valid_mask
+
+    valid_scores = valid_block_mask[:, :, :num_blocks, :num_blocks]
+
+    # --- FP32 reference ---
+    if reference_scores is None:
+        fp_scores = _compute_reference_scores(
+            query,
+            key,
+            valid_mask=valid_scores,
+            block_size=block_size,
+            sample_pattern="both_diagonals",
+            aggregation="logsumexp",
+            scale_by_sqrt_dim=scale_by_sqrt_dim,
+        )
+    else:
+        fp_scores = reference_scores
+
+    # --- Reference mask construction (vectorized) ---
+    reference_mask = _compute_reference_mask_vectorized(
+        fp_scores,
+        target_sparsity=target_sparsity,
+        local_blocks=local_blocks,
+        valid_mask=valid_scores,
+    )
+
+    # Pad reference mask if needed
+    if reference_mask.shape != valid_block_mask.shape:
+        padded = torch.zeros_like(valid_block_mask)
+        n2, k2 = reference_mask.shape[2], reference_mask.shape[3]
+        padded[:, :, :n2, :k2] = reference_mask
+        reference_mask = padded
+
+    # Per-row k
+    k_per_row = (reference_mask & valid_block_mask).sum(dim=-1).long()
+
+    # --- INT8 K quantization + expand ---
+    k_quantized = quantize_int8_per_group(key, group_size=group_size)
+    key_int8 = k_quantized.values  # [B, H, L, D] int8
+    key_scales = k_quantized.scale  # [B, H, L, G] fp32
+    key_is_zero = k_quantized.is_zero_group  # [B, H, L, G] bool
+
+    key_scales_expanded = _expand_group_tensor(key_scales, group_size, dim).contiguous()
+    key_is_zero_expanded = _expand_group_tensor(
+        key_is_zero.to(torch.int8), group_size, dim,
+    ).to(torch.bool).contiguous()
+
+    # --- Triton kernel ---
+    triton_quant, triton_lower, triton_upper = triton_aglr_logsumexp_scoring(
+        query,
+        key_int8,
+        key_scales_expanded,
+        key_is_zero_expanded,
+        valid_scores,
+    )
+
+    # --- Fused Triton partition certificate ---
+    # Build selected mask from reference top-k
+    selected_mask = torch.zeros(
+        batch, heads, num_blocks, num_blocks, dtype=torch.bool, device=query.device,
+    )
+    for b in range(batch):
+        for h in range(heads):
+            for q in range(num_blocks):
+                k_keep = int(k_per_row[b, h, q].item())
+                valid_k = valid_scores[b, h, q]
+                ref_row = fp_scores[b, h, q].clone()
+                ref_row[~valid_k] = float("-inf")
+                if k_keep > 0:
+                    _, topk_idx = ref_row.topk(min(k_keep, int(valid_k.sum().item())))
+                    selected_mask[b, h, q, topk_idx] = True
+
+    decisions, ambiguous = triton_certified_topk_mask_partition(
+        triton_lower,
+        triton_upper,
+        selected_mask,
+        valid_scores,
+    )
+
+    mask = selected_mask.clone()
+    mismatch = (mask != reference_mask) & valid_block_mask
+    mismatch_count = int(mismatch.sum().item())
+    exact_match = mismatch_count == 0
+
+    return TritonAGLRCertiMaskResult(
+        quantized_scores=triton_quant,
+        lower_scores=triton_lower,
+        upper_scores=triton_upper,
+        decisions=decisions,
+        ambiguous=ambiguous,
         mask=mask,
         reference_mask=reference_mask,
         exact_match=exact_match,

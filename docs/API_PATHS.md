@@ -3,17 +3,6 @@
 This document describes the different code paths in CertiMask, their
 purpose, and when to use each.
 
-## Historical Baseline
-
-**Threshold / mean-pooled path**
-
-- `certified_threshold_mask` — threshold-based CertiMask
-- `naive_quantized_mask` — naive quantized mask
-- `reference_mask` — reference mask for comparison
-
-These are early baselines superseded by AGLR-C. Kept for historical
-reference and backward compatibility.
-
 ## Reference-First Validation Path
 
 **Use for exactness validation. Not deployable.**
@@ -42,10 +31,10 @@ FP32 reference scores → vectorized top-k → Triton scoring → fused Triton c
 ```
 
 Key APIs:
+- `triton_aglr_certimask_logsumexp_g4_optimized()` — optimized pipeline with fused Triton cert
 - `triton_aglr_logsumexp_scoring()` — Triton scoring kernel
 - `vectorized_topk_mask()` — optimized top-k mask construction
 - `triton_certified_topk_mask_partition()` — fused Triton partition certificate
-- `triton_aglr_certimask_logsumexp_g4()` — full pipeline wrapper
 
 This path replaces the slow PyTorch loops with Triton kernels and
 vectorized operations. It still computes FP32 reference scores, so it
@@ -74,7 +63,7 @@ The following APIs are slow and must not appear in benchmark hot paths:
 |---|---|---|
 | `certified_topk_mask()` | Python triple-nested loop over B×H×Q | `triton_certified_topk_mask_partition()` |
 | `aglr_local_plus_landmark_mask()` | Python triple-nested loop over B×H×Q | `vectorized_topk_mask()` |
-| `certified_threshold_mask()` | Historical baseline | `triton_aglr_certimask_logsumexp_g4()` |
+| `triton_aglr_certimask_logsumexp_g4()` | Uses slow PyTorch cert internally | `triton_aglr_certimask_logsumexp_g4_optimized()` |
 | Full FP reference scores inside online path | O(N_blocks²) | Only for validation, not deployable |
 
 ## Benchmark Mode Summary
@@ -84,8 +73,5 @@ The following APIs are slow and must not appear in benchmark hot paths:
 | Reference-first validation | Yes | PyTorch loop | No | Correctness proof |
 | Optimized validation | Yes | Fused Triton | No | Fast validation |
 | Low-bit-first (desired) | No | Fused Triton | Yes | **Not implemented** |
-| Online full (Mode 2A) | Yes | Fused Triton | No | Total pipeline cost |
-| Cached quantization (Mode 2B) | Yes | Fused Triton | No | Quantization caching |
-| Optimistic cached (Mode 3) | Pre-computed | Fused Triton | No | Lower-bound certificate cost |
 
 See `docs/BENCHMARK_SEMANTICS.md` for detailed mode definitions.

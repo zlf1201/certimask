@@ -80,7 +80,6 @@ class TestApiPathGuideExists:
 
         content = api_paths.read_text()
         required = [
-            "Historical",
             "Reference-First",
             "Optimized",
             "Deployable",

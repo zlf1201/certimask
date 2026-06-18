@@ -42,11 +42,20 @@ It does not demonstrate end-to-end prefill speedup.
 - **Full-pair AGLR-C v1 is not deployable as a speedup path against FlashAttention.**
 - The low-bit certificate validates a reference sparse indexer, not dense attention exactness.
 
+## Removed Historical Paths
+
+The following historical paths have been removed from this repository:
+
+- **Threshold / mean-pooled CertiMask path** — superseded by AGLR-C v1 top-k certificate
+- **Synthetic threshold experiments** — early-phase diagnostic scripts
+- **HF diagnostic scans** — layer/group/quant strategy scan scripts
+- **Oracle/local hybrid diagnostic scripts** — attention quality and oracle mask diagnostics
+- **Threshold-path metrics and diagnostics** — `attention_quality.py`, `diagnostics.py`, `metrics.py`, `synthetic.py`
+- **Archive experiment scripts** — all Phase 3–8 historical scripts
+
+See `docs/results/PHASE_SUMMARY.md` for curated results from all phases.
+
 ## Architecture
-
-### Historical Path (deprecated)
-
-Threshold / mean-pooled CertiMask. Superseded by AGLR-C.
 
 ### Current Validation Path: Reference-First AGLR-C + CertiMask
 
@@ -56,6 +65,15 @@ FP32 reference scores → FP32 reference mask → low-bit interval → certifica
 
 Good for correctness validation. Not deployable because it requires
 full FP32 reference scoring (O(N_blocks²)).
+
+### Optimized Validation Path: Triton + Fused Certificate
+
+```
+FP32 reference scores → vectorized top-k → Triton scoring → fused Triton certificate
+```
+
+Fastest validation path. Uses Triton JIT kernels for scoring and
+fused partition certificate (~73,000x over PyTorch).
 
 ### Desired Deployable Path: Low-Bit-First (future work)
 
@@ -68,11 +86,10 @@ This eliminates the FP32 reference dependency. Not yet implemented.
 ## Repository Layout
 
 ```
-src/certimask/     Core library: quantization, scoring, bounds, masking,
-                   certificates, Triton kernels, vectorized top-k
-tests/             Test suite
-experiments/active/    Current benchmark entrypoints (Phase 9)
-experiments/archive/   Historical diagnostic/scan scripts (Phase 3–8)
+src/certimask/     Core library: quantization, scoring, bounds, certificates,
+                   Triton kernels, vectorized top-k
+tests/             Test suite (focused on current path)
+experiments/active/    Current benchmark entrypoints
 docs/              Research status, benchmark semantics, API path guide, roadmap
 ```
 
@@ -99,10 +116,8 @@ mypy src
 | Mode | FP ref scores? | Deployable? | Purpose |
 |---|---|---|---|
 | Reference-first validation | Yes | No | Correctness proof |
+| Optimized validation | Yes | No | Fast validation with fused Triton cert |
 | Low-bit-first (desired) | No | Yes | **Not yet implemented** |
-| Online full (Mode 2A) | Yes | No | Total pipeline cost |
-| Cached quantization (Mode 2B) | Yes | No | Quantization caching |
-| Optimistic cached (Mode 3) | Pre-computed | No | Lower-bound certificate cost |
 
 See `docs/BENCHMARK_SEMANTICS.md` for full definitions.
 

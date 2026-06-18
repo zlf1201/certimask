@@ -7,19 +7,21 @@ indexing. It validates that INT8-quantized scoring can produce block-sparse atte
 masks identical to FP32 reference, using certified score intervals and top-k
 partition certificates.
 
+This repository is a minimal cleaned research prototype. Historical threshold/
+mean-pooled paths have been removed. Only current AGLR-C v1 validation and
+optimized Triton certificate components remain.
+
 ## Validated Results
 
 | Claim | Status | Evidence |
 |---|---|---|
 | INT8 per-group K-only quantization bounds are correct | **Validated** | `tests/test_quantization.py`, `tests/test_score_bounds.py` |
 | Score intervals cover FP32 reference scores | **Validated** | `tests/test_aglr_certimask.py`, `tests/test_aglr_antidiagonal.py` |
-| Threshold certificate: `M_CertiMask == M_ref` | **Validated** | `tests/test_masking.py` (20-seed stress test) |
 | AGLR-C v1 reference indexer quality (kept mass, cosine, L2) | **Validated** | Phase 7E full 24-layer scan |
 | Top-k partition certificate: `M_CertiMask == M_AGLR_ref` | **Validated** | Phase 8A/8B, exact_match=True, mismatch=0 across all layers |
 | Triton sampled scoring + interval matches PyTorch | **Validated** | `tests/test_triton_aglr_certimask.py`, max diff ~1e-6 |
 | Fused Triton partition certificate matches PyTorch | **Validated** | `tests/test_triton_topk_certificate.py` |
 | Vectorized top-k mask matches loop implementation | **Validated** | `tests/test_vectorized_topk.py` |
-| CertiMask readiness for Triton prototype | **Validated** | Phase 8C work summary |
 
 ## Key Quantitative Results
 
@@ -66,3 +68,17 @@ It validates that low-bit scoring can be certified to produce identical
 block-sparse masks as FP32 reference. It does **not** demonstrate
 end-to-end acceleration. The full-pair AGLR-C v1 indexer is not a
 deployable speedup path against FlashAttention.
+
+## Removed Historical Paths
+
+The following have been removed from this minimal repository:
+
+- Threshold / mean-pooled CertiMask path (superseded by AGLR-C v1)
+- `attention_quality.py` — attention quality metrics and diagnostics
+- `diagnostics.py` — threshold-path per-tile diagnostics
+- `metrics.py` — threshold-path mask/bound metrics
+- `synthetic.py` — synthetic data generation
+- All archive experiment scripts (Phase 3–8)
+- Threshold-path tests and diagnostic tests
+
+See `docs/results/PHASE_SUMMARY.md` for curated results from all phases.

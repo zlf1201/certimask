@@ -5,8 +5,8 @@
 ### Phase 3–8: Correctness and Certification
 - INT8 per-vector and per-group quantization with analytic error bounds
 - Score interval computation (coordinate, groupwise, K-only per-group)
-- Threshold certificate (three-way KEEP/DROP/AMBIGUOUS)
-- AGLR-C v0/v1 reference indexer (landmarks, antidiagonal scores)
+- Threshold certificate (three-way KEEP/DROP/AMBIGUOUS) — **removed from codebase**
+- AGLR-C v1 reference indexer (antidiagonal sampled scoring)
 - AGLR-C quality validation (24-layer full scan)
 - Top-k partition certificate (threshold and partition modes)
 - Full AGLR-C CertiMask pipeline with exact match guarantee
@@ -22,12 +22,14 @@
 
 ## Current Status
 
-**The project is a correctness and certification research prototype.**
+**The project is a minimal cleaned correctness and certification research prototype.**
 
 - All certificates produce exact-match masks (mismatch_count = 0)
 - Triton microbenchmarks show significant speedups over PyTorch baselines
 - No end-to-end prefill speedup has been demonstrated
 - No crossover with FlashAttention SDPA found at L≤8192
+- Historical threshold/mean-pooled paths have been removed
+- Only current AGLR-C v1 validation and optimized Triton components remain
 
 ## Next Steps
 
